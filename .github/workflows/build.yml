@@ -1,7 +1,11 @@
-name: Build and Release Cross-Platform App
+name: Build and Release
 
+# This workflow now runs on two conditions:
+# 1. When code is pushed to the 'main' branch (for testing and updating the badge)
+# 2. When a tag starting with 'v' is pushed (for creating a release)
 on:
   push:
+    branches: [ "main" ]
     tags:
       - 'v*'
 
@@ -13,9 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-
     runs-on: ${{ matrix.os }}
-    
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -23,7 +25,6 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      # (Python and Node setup steps remain the same...)
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
@@ -58,24 +59,24 @@ jobs:
       - name: 🚀 Build Electron App
         run: npm run build
         shell: bash
-      
-      # --- ▼▼▼ IMPROVEMENT 1: UPLOAD ONLY THE FINAL PACKAGE ▼▼▼ ---
+
       - name: 📤 Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dvr-scan-${{ matrix.os }}
-          # This glob pattern ensures we only grab the final distributable files,
-          # not all the intermediate unpacked files.
           path: |
             dist/*.AppImage
             dist/*.exe
             dist/*.dmg
             dist/*.zip
-            dist/*.yml # Include update metadata files
-            dist/*.blockmap # Include update metadata files
+            dist/*.yml
+            dist/*.blockmap
 
   release:
+    # This job now depends on the build job
     needs: build
+    # CRITICAL: This condition ensures this job ONLY runs for tags, not for pushes to main
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
 
     steps:
@@ -87,6 +88,4 @@ jobs:
       - name: 📦 Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          # --- ▼▼▼ IMPROVEMENT 2: UPLOAD CLEANED ARTIFACTS ▼▼▼ ---
-          # This will now only upload the specific files you need.
           files: artifacts/**/*
