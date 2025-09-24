@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DVR-Scan</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>DVR-Scan</h1>
+
+        <!-- Input Section -->
+        <fieldset>
+            <legend>Input Videos</legend>
+            <div class="file-controls">
+                <button id="choose-files-button" class="button">Choose Files</button>
+                <button id="remove-button" disabled>Clear Selection</button>
+            </div>
+            <div id="video-list-container"></div>
+        </fieldset>
+        
+        <!-- Settings Section -->
+        <fieldset>
+            <legend>Scan Settings</legend>
+            <div class="settings-grid">
+                <div>
+                    <label for="threshold">Threshold:</label>
+                    <input type="number" id="threshold" value="0.15" step="0.01" min="0">
+                </div>
+                <div>
+                    <label for="min-event-length">Min Event Length (s):</label>
+                    <input type="text" id="min-event-length" value="0.1s">
+                </div>
+                <div>
+                    <label for="output-mode">Output Mode:</label>
+                    <select id="output-mode">
+                        <option value="opencv">OpenCV (.avi)</option>
+                        <option value="ffmpeg">ffmpeg (re-encode)</option>
+                        <option value="copy">ffmpeg (copy)</option>
+                    </select>
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Advanced Settings Section -->
+        <fieldset>
+            <legend>Advanced Settings</legend>
+            <div class="advanced-settings-grid">
+                <div class="checkbox-group vertical">
+                    <label>Overlays:</label>
+                    <div>
+                        <input type="checkbox" id="bounding-box">
+                        <label for="bounding-box">Draw bounding box</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="time-code">
+                        <label for="time-code">Draw timecode</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="frame-metrics">
+                        <label for="frame-metrics">Draw frame metrics</label>
+                    </div>
+                </div>
+
+                <div class="input-group vertical">
+                     <label>Performance:</label>
+                    <div>
+                        <label for="frame-skip">Frame Skip:</label>
+                        <input type="number" id="frame-skip" value="0" min="0">
+                    </div>
+                    <div>
+                        <label for="downscale-factor">Downscale Factor:</label>
+                        <input type="number" id="downscale-factor" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="input-group vertical full-width">
+                    <label for="region-data">Region of Interest Data:</label>
+                    <textarea id="region-data" rows="4" placeholder="Paste region data here, one polygon per line. E.g.:&#10;100 100 800 100 800 600 100 600"></textarea>
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Run Section -->
+        <fieldset>
+            <legend>Run</legend>
+            <button id="start-button">Start Scan</button>
+            <div class="checkbox-group">
+                <input type="checkbox" id="scan-only">
+                <label for="scan-only">Scan Only (no output files)</label>
+            </div>
+        </fieldset>
+        
+        <!-- Progress & Output Section -->
+        <fieldset>
+            <legend>Progress</legend>
+            <div id="progress-container" class="hidden">
+                <p id="progress-text">Scanning...</p>
+                <progress id="progress-bar" value="0" max="100"></progress>
+            </div>
+            <pre id="output-area"></pre>
+        </fieldset>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

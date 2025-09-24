@@ -1,0 +1,22 @@
+name: Manual Artifact Cleanup
+
+# This allows you to run the workflow manually from the Actions tab
+on:
+  workflow_dispatch:
+
+jobs:
+  remove-old-artifacts:
+    runs-on: ubuntu-latest
+    
+    # This grants the workflow permission to read and delete artifacts
+    permissions:
+      actions: write
+      
+    steps:
+      - name: Remove all artifacts
+        uses: c-hive/gha-remove-artifacts@v1
+        with:
+          # This tells the action to not fail if it doesn't find any artifacts
+          fail-if-no-artifacts-found: false
+          # You can specify a minimum age in days, but we want to delete all
+          # so we don't set a minimum age.

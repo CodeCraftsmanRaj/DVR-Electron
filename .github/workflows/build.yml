@@ -1,0 +1,75 @@
+name: Build Cross-Platform Releases
+
+on:
+  push:
+    branches: [ "main" ] # <-- ADD THIS LINE
+    tags:
+      - 'v*'
+
+# --- THIS IS THE CRITICAL NEW SECTION ---
+# This block grants the workflow the permissions it needs to create a release.
+permissions:
+  contents: write
+# ----------------------------------------
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    # We use the built-in GITHUB_TOKEN which is now empowered by the permissions block above.
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r dvr-scan-py/requirements.txt
+        shell: bash
+
+      - name: ⚙️ Build Python Engine (Windows)
+        if: runner.os == 'Windows'
+        working-directory: ./dvr-scan-py
+        run: pyinstaller --noconfirm dvr-scan-engine.spec
+        shell: bash
+
+      - name: ⚙️ Build Python Engine (macOS & Linux)
+        if: runner.os == 'macOS' || runner.os == 'Linux'
+        working-directory: ./dvr-scan-py
+        run: |
+          pyinstaller --noconfirm dvr-scan-engine.spec
+          chmod +x dist/dvr-scan-engine
+        shell: bash
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Node dependencies
+        run: npm install
+        shell: bash
+
+      - name: 🚀 Build Electron App
+        run: npm run build
+        shell: bash
+
+      - name: 📤 Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvr-scan-${{ matrix.os }}
+          path: dist/*

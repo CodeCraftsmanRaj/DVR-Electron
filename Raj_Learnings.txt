@@ -1,0 +1,140 @@
+Introduction: What We Are Building
+
+At a high level, our application has two distinct parts that work together:
+
+    The Frontend (The "Face"): This is the beautiful, modern user interface that the user sees and interacts with. It's built with Electron. It's essentially a special, desktop-only web browser window.
+
+        Technology: HTML, CSS, JavaScript.
+
+        Job: Show buttons, sliders, and progress bars. Collect user input. Display results.
+
+    The Backend (The "Engine"): This is your powerful, existing DVR-Scan Python project. It's a command-line tool that does all the heavy lifting and complex video processing.
+
+        Technology: Python, OpenCV, NumPy.
+
+        Job: Read video files, analyze frames for motion, and report back on what it finds.
+
+Our entire goal is to make these two parts talk to each other efficiently and securely. The Frontend tells the Engine what to do, and the Engine reports its progress and results back to the Frontend.
+Part 1: Understanding Electron in Detail (The UI Shell)
+
+The best way to think of an Electron app is as a special web browser that has superpowers. It can display a web page (index.html), but its JavaScript has been given special permission to access your computer's file system, run other programs, and do things a normal website in Chrome or Firefox cannot.
+
+Electron itself is split into three crucial concepts:
+1. The Main Process (The "Brain")
+
+    What it is: A single, invisible background process that is the heart of your entire application.
+
+    What it does:
+
+        It creates and manages your application windows (BrowserWindow).
+
+        It handles all communication with the operating system (like opening a file dialog).
+
+        It is the only part of your Electron app that has the power to run other programs, like our Python engine.
+
+    Our Code: This is your src/main.js file.
+
+2. The Renderer Process (The "Face")
+
+    What it is: The content inside one of your application windows. It is literally a Chromium web browser page.
+
+    What it does:
+
+        Renders HTML and CSS to create the visual interface.
+
+        Runs the user-facing JavaScript to handle button clicks, update text, etc.
+
+        Crucially, it is sandboxed for security. It has no direct access to the computer's file system or other programs. It must ask the Main Process for help.
+
+    Our Code: This is everything in your src/ui/ folder: index.html, styles.css, and renderer.js.
+
+3. The Bridge (preload.js) and IPC
+
+Since the Renderer (the UI) is sandboxed, how does it talk to the powerful Main process? It uses a secure bridge defined in the preload.js script and a system called Inter-Process Communication (IPC).
+
+    preload.js: This is a special script that runs in a privileged environment before your web page content loads. Its one job is to create a secure bridge (contextBridge.exposeInMainWorld) between your UI's JavaScript (renderer.js) and the Electron main process.
+
+    The Bridge (window.electronAPI): We created an object called electronAPI that is available globally in our renderer.js. This object contains only the functions we explicitly allowed in preload.js.
+
+    IPC: When you call window.electronAPI.startScan(...) in your UI, it's not running the Python script directly. It's actually sending a secure message (an IPC message) over a channel named 'start-scan' to the Main process. The Main process is always listening for messages on these channels.
+
+The Full Communication Flow:
+
+    User Clicks "Start Scan" in the UI (renderer.js).
+
+    renderer.js calls window.electronAPI.startScan(settings).
+
+    The Bridge (preload.js) sends an IPC message named 'start-scan' with the settings data to the Main process.
+
+    The Main Process (main.js) is listening with ipcMain.on('start-scan', ...) and receives the message.
+
+    The Main process runs the Python engine using spawn().
+
+    The Python Engine prints JSON progress updates to its standard output.
+
+    The Main Process captures this output (dvrScanProcess.stdout.on('data', ...)).
+
+    The Main process sends a new IPC message, 'scan-update', back to the UI window.
+
+    The UI (renderer.js) is listening with window.electronAPI.onScanUpdate(...) and updates the progress bar.
+
+Part 2: Understanding DVR-Scan in Detail (The Engine)
+
+Now let's look at the Python project. Its job is to find motion events.
+How It Detects Motion: Background Subtraction
+
+The core technique used is called background subtraction. It's a very clever and efficient way to find movement.
+
+Imagine you are looking at a security camera feed of an empty room.
+
+    Learn the Background: The algorithm looks at the first several frames and creates an "average" or statistical model of what the empty room looks like. This is the background model.
+
+    Compare New Frames: For every new frame that comes in, the algorithm compares it pixel-by-pixel to the background model.
+
+    Create a "Difference Mask": It creates a new black-and-white image (a "mask") where white pixels represent areas that are different from the background model, and black pixels are areas that are the same. If a person walks into the room, they will appear as a white silhouette on this mask. This is the raw motion.
+
+    Clean Up Noise: The raw difference mask can be "noisy" (e.g., small lighting changes, camera sensor noise). The code applies a blurring kernel (kernel_size) to remove small, isolated white specks, leaving only larger, more significant areas of change.
+
+    Calculate a Motion Score: It then calculates how much "whiteness" is in the cleaned-up mask. A mask that is all black has a score of 0. A mask that is all white has a high score.
+
+    Apply a Threshold: It compares this score to the threshold value you set in the UI. If the motion score > threshold, the frame is flagged as containing motion.
+
+    Identify Events: When it sees a continuous sequence of frames flagged with motion that is longer than the min-event-length, it declares a "motion event".
+
+Key Files in Your Python Project
+
+    dvr_scan/__main__.py and dvr_scan/cli.py (The "Front Door"): These files define the command-line interface. cli.py uses Python's argparse to define all the valid arguments (-i, -t, --json-output, etc.). __main__.py is the entry point that runs when you execute python -m dvr_scan. This is how our Electron app "talks" to the engine.
+
+    dvr_scan/controller.py (The "Orchestrator"): This file takes the parsed command-line arguments, sets up the main MotionScanner object with all the correct settings, runs the scan, and then formats the final output (either as a text table or as JSON).
+
+    dvr_scan/scanner.py (The "Worker"): The MotionScanner class is the main workhorse. Its scan() method contains the main loop that:
+
+        Reads frames from the video one by one.
+
+        Sends each frame to the MotionDetector.
+
+        Collects the motion scores.
+
+        Uses the event logic (threshold, min-length, etc.) to decide where events start and end.
+
+        Handles saving the final video clips.
+
+    dvr_scan/detector.py (The "Scientist"): The MotionDetector class is where the core algorithm lives. It takes a frame and uses a "subtractor" to get the motion mask and calculate the motion score.
+
+    dvr_scan/subtractor.py (The "Specialist"): This file contains the different background subtraction algorithms you can choose from (MOG2, CNT). These are highly optimized algorithms provided by the OpenCV library.
+
+Next Steps for You
+
+    Experiment with the UI: Try adding new input fields to index.html (e.g., for time-before-event).
+
+    Connect the New Inputs: In renderer.js, get the value from your new input. In main.js, update the buildArgs function to add the corresponding command-line flag (e.g., args.push('-tb', settings.timeBefore)).
+
+    Improve the Output: In renderer.js, instead of just printing the final event list to the <pre> tag, try creating a nice-looking HTML table to display the results.
+
+    Read the Docs: Now that you have a high-level understanding, look at the official documentation for Electron and Electron Builder. You'll find that the concepts are much easier to grasp.
+
+        Electron Documentation
+
+        Electron Builder Documentation
+
+You have successfully built a complex, cross-platform application from the ground up. The foundation is solid, and now you can focus on building the features and user experience you want.

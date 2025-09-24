@@ -1,0 +1,52 @@
+# General
+# -------------------------------------------------------------------
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor directories
+.vscode/
+.idea/
+*.swp
+*~
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Node.js / Electron Project
+# -------------------------------------------------------------------
+# Dependency directory
+node_modules/
+
+# Build output
+dist/
+
+# Other temporary files
+.npm
+.eslintcache
+release-builds/
+
+
+# Python Project (in dvr-scan-py subdirectory)
+# -------------------------------------------------------------------
+# Virtual Environment - CRITICAL to ignore
+dvr-scan-py/.venv/
+
+# PyInstaller and build artifacts
+dvr-scan-py/build/
+dvr-scan-py/dist/
+
+# Python cache and compiled files
+dvr-scan-py/__pycache__/
+dvr-scan-py/**/*.pyc
+dvr-scan-py/**/*.pyo
+dvr-scan-py/*.egg-info/

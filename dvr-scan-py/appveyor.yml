@@ -1,0 +1,105 @@
+# Build signed releases for DVR-Scan Windows x64
+
+build: false
+
+branches:
+  only:
+    - main
+    - /releases\/.+/
+    - /v.+-release/
+
+skip_tags: false
+skip_non_tags: true
+
+environment:
+  matrix:
+    - PYTHON: "C:\\Python312-x64"
+  # Encrypted AdvancedInstaller License
+  ai_license_secret:
+    secure: of3o1pInqCJYwKLFsiadbsRYazCmCuZq7r2roaYvYXmBvm6e6JHsRU47waylTmhm
+  ai_license_salt:
+    secure: +NKWwlkEptlThgfeL35pLo7EsnkJc+4WODm8tTg1aO5fc0duQ4r100fHQYj6nzhyUdy3Dhs/mOLkxD8rNbBiEQ==
+  ffmpeg_version: "8.0"
+
+# SignPath Config for Code Signing
+deploy:
+- provider: Webhook
+  url: https://app.signpath.io/API/v1/f2efa44c-5b5c-45f2-b44f-8f9dde708313/Integrations/AppVeyor?ProjectSlug=DVR-Scan&SigningPolicySlug=release-signing
+  authorization:
+    secure: FBgWCaxCCKOqc2spYf5NGWSNUGLbT5WeuC5U0k4Of1Ids9n51YWxhGlMyzLbdNBFe64RUcOSzk/N3emlQzbsJg==
+#  on:
+#    APPVEYOR_REPO_TAG: true # keep casing this way for Linux builds where variables are case-sensitive
+
+install:
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  - echo * *                      SETTING UP PYTHON ENVIRONMENT                      * *
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  - 'SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%'
+  - python --version
+  - python -m pip install --upgrade pip
+  - python -m pip install --upgrade build wheel virtualenv
+  - python -m pip install -r dist/requirements_windows.txt -r docs/requirements.txt
+
+
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  - echo * *                          BUILDING WINDOWS EXE                           * *
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  # Build Windows .EXE and create Windows distribution
+  - python dist/pre_release.py --use-local-images
+  - pyinstaller dist/dvr-scan.spec
+  - python dist/post_release.py
+  - appveyor DownloadFile https://github.com/GyanD/codexffmpeg/releases/download/%ffmpeg_version%/ffmpeg-%ffmpeg_version%-full_build.7z
+  - 7z e ffmpeg-%ffmpeg_version%-full_build.7z -odist/ffmpeg ffmpeg.exe LICENSE -r
+  - move dist\ffmpeg\ffmpeg.exe dist\dvr-scan\
+  - move dist\ffmpeg\LICENSE dist\dvr-scan\LICENSE-FFMPEG
+  - cd dist/dvr-scan
+  - 7z a ../dvr-scan-win64.zip *
+  - cd ../..
+
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  - echo * *                         BUILDING MSI INSTALLER                          * *
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  # Download, install, and register AdvancedInstaller
+  - cd dist/installer
+  - ps: iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
+  - appveyor-tools\secure-file -decrypt license65.dat.enc -secret %ai_license_secret% -salt %ai_license_salt%
+  - appveyor DownloadFile https://www.advancedinstaller.com/downloads/advinst.msi
+  - msiexec /i advinst.msi /qn
+  # TODO: Determine the path to Advanced Installer more programatically.
+  - 'SET PATH=%PATH%;C:\\Program Files (x86)\\Caphyon\\Advanced Installer 23.0\\bin\\x86'
+  # License path must be absolute
+  - AdvancedInstaller.com /RegisterOffline "%cd%\license65.dat"
+  # Create MSI installer
+  - AdvancedInstaller.com /build DVR-Scan.aip
+  - cd ../..
+
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  - echo * *                        PACKAGING BUILD ARTIFACTS                        * *
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  # Zip all resources together for code signing
+  - cd dist
+  - move installer\DVR-Scan-*.msi .
+  - cp dvr-scan\dvr-scan.exe .
+  - cp dvr-scan\dvr-scan-app.exe .
+  - 7z a dvr-scan-signed.zip dvr-scan.exe dvr-scan-app.exe DVR-Scan-*.msi
+  - cd ..
+
+test_script:
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  - echo * *                              TESTING BUILD                              * *
+  - echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  # Run unit tests
+  - pytest
+  # Test Windows build
+  - cd dist/dvr-scan
+  - dvr-scan.exe --version
+  - dvr-scan.exe -i ../../tests/resources/simple_movement.mp4 -so -df 4 -et 100
+  - dvr-scan-app.exe --version
+
+artifacts:
+  # Portable ZIP
+  - path: dist/dvr-scan-win64.zip
+    name: DVR-Scan-win64_portable
+  # Bundle for Code Signing
+  - path: dist/dvr-scan-signed.zip
+    name: DVR-Scan-win64_installer

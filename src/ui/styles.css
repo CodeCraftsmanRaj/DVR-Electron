@@ -1,0 +1,52 @@
+/* Basic styling to make the app look clean */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+.container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+fieldset { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 20px; }
+legend { font-weight: bold; }
+input, select, button, textarea { font-size: 14px; padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; margin: 5px 0; }
+button, .button { cursor: pointer; background-color: #007bff; color: white; border-color: #007bff; }
+button:hover, .button:hover { background-color: #0056b3; }
+#remove-button { background-color: #dc3545; border-color: #dc3545; }
+#remove-button:disabled { background-color: #6c757d; border-color: #6c757d; cursor: not-allowed; }
+.file-controls { margin-bottom: 10px; }
+#video-list-container { max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 5px; }
+#output-area { background-color: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-family: "JetBrains Mono", monospace; min-height: 100px; max-height: 300px; overflow-y: auto; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.hidden { display: none; }
+#progress-bar { width: 100%; }
+
+/* --- NEW STYLES --- */
+.advanced-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns for overlays and performance */
+    gap: 20px;
+}
+
+.checkbox-group.vertical, .input-group.vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.checkbox-group.vertical > div, .input-group.vertical > div {
+    margin-bottom: 5px;
+}
+
+.input-group.vertical > label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.input-group.vertical input[type="number"] {
+    width: 80px; /* Smaller width for number inputs */
+}
+
+.full-width {
+    grid-column: 1 / -1; /* Make an item span all columns */
+}
+
+#region-data {
+    width: 100%;
+    box-sizing: border-box; /* Important for 100% width */
+    font-family: "JetBrains Mono", monospace;
+}

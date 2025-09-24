@@ -1,0 +1,12 @@
+#
+# DVR-Scan Python Requirements
+#
+numpy
+opencv-python
+opencv-contrib-python
+pillow
+platformdirs
+pytest
+scenedetect>=0.6.2
+screeninfo
+tqdm
