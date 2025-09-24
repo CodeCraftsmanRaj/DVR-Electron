@@ -15,17 +15,15 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
-
-    # --- ▼▼▼ THIS IS THE FIX ▼▼▼ ---
-    # Add this env block to provide the token to electron-builder
+    
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    # --- ▲▲▲ END OF FIX ▲▲▲ ---
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      # (Python and Node setup steps remain the same...)
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
@@ -58,15 +56,23 @@ jobs:
         shell: bash
 
       - name: 🚀 Build Electron App
-        # This step will now have access to the GH_TOKEN
         run: npm run build
         shell: bash
-
+      
+      # --- ▼▼▼ IMPROVEMENT 1: UPLOAD ONLY THE FINAL PACKAGE ▼▼▼ ---
       - name: 📤 Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dvr-scan-${{ matrix.os }}
-          path: dist/*
+          # This glob pattern ensures we only grab the final distributable files,
+          # not all the intermediate unpacked files.
+          path: |
+            dist/*.AppImage
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.yml # Include update metadata files
+            dist/*.blockmap # Include update metadata files
 
   release:
     needs: build
@@ -81,4 +87,6 @@ jobs:
       - name: 📦 Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
+          # --- ▼▼▼ IMPROVEMENT 2: UPLOAD CLEANED ARTIFACTS ▼▼▼ ---
+          # This will now only upload the specific files you need.
           files: artifacts/**/*
