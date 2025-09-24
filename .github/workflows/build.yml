@@ -1,24 +1,26 @@
 name: Build and Release Cross-Platform App
 
-# This workflow now only runs when you push a tag like v1.0.0, v1.0.1, etc.
-# It will NOT run on pushes to the main branch anymore.
 on:
   push:
     tags:
       - 'v*'
 
-# This is correct and grants the workflow permission to create a release.
 permissions:
   contents: write
 
 jobs:
-  # JOB 1: Build the applications for all platforms. This part is mostly the same.
   build:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
+
+    # --- ▼▼▼ THIS IS THE FIX ▼▼▼ ---
+    # Add this env block to provide the token to electron-builder
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # --- ▲▲▲ END OF FIX ▲▲▲ ---
 
     steps:
       - name: 📥 Checkout code
@@ -40,7 +42,6 @@ jobs:
         working-directory: ./dvr-scan-py
         run: |
           pyinstaller --noconfirm dvr-scan-engine.spec
-          # On Linux/macOS, we must make it executable for the 'afterPack' hook
           if [[ "$RUNNER_OS" != "Windows" ]]; then
             chmod +x dist/dvr-scan-engine
           fi
@@ -57,32 +58,27 @@ jobs:
         shell: bash
 
       - name: 🚀 Build Electron App
+        # This step will now have access to the GH_TOKEN
         run: npm run build
         shell: bash
 
       - name: 📤 Upload Build Artifact
-        # This step saves the built files (AppImage, etc.) so the next job can use them
         uses: actions/upload-artifact@v4
         with:
           name: dvr-scan-${{ matrix.os }}
           path: dist/*
 
-  # --- NEW JOB 2: Create the GitHub Release ---
   release:
-    # This job will only run after all the 'build' jobs have finished successfully
     needs: build
     runs-on: ubuntu-latest
 
     steps:
       - name: 📥 Download all build artifacts
-        # This step downloads the AppImage, exe, and dmg that the build jobs created
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: 📦 Create GitHub Release and Upload Assets
-        # This is the action that creates the release on your repo's page
         uses: softprops/action-gh-release@v2
         with:
-          # This tells the action to upload all the files we downloaded in the previous step
           files: artifacts/**/*
