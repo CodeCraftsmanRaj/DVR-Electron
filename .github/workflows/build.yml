@@ -2,12 +2,9 @@ name: Build and Release
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     tags:
-      - 'v*'
-
-permissions:
-  contents: write
+      - "v*"
 
 jobs:
   build:
@@ -15,17 +12,20 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Permissions are set here for the build job as well, which is good practice.
+    permissions:
+      contents: read
 
     steps:
+      # ... (All your build steps are correct and remain unchanged) ...
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: 📦 Install Python Dependencies
         run: |
@@ -34,7 +34,6 @@ jobs:
           pip install -r dvr-scan-py/requirements.txt
         shell: bash
 
-      # --- This section is slightly improved for robustness ---
       - name: ⚙️ Build Python Engine (Windows)
         if: runner.os == 'Windows'
         working-directory: ./dvr-scan-py
@@ -48,13 +47,12 @@ jobs:
           pyinstaller --noconfirm dvr-scan-engine.spec
           chmod +x dist/dvr-scan-engine
         shell: bash
-      # ----------------------------------------------------
 
       - name: 🟢 Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: 📦 Install Node dependencies
         run: npm install
@@ -70,10 +68,16 @@ jobs:
           name: dvr-scan-${{ matrix.os }}
           path: dist/
 
+  # --- THIS IS THE CORRECTED RELEASE JOB ---
   release:
     needs: build
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+
+    # Granting explicit write permissions to the release job is the key fix.
+    permissions:
+      contents: write
+
     steps:
       - name: 📥 Download all build artifacts
         uses: actions/download-artifact@v4
@@ -83,4 +87,6 @@ jobs:
       - name: 📦 Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
+          # This automatically uses the GITHUB_TOKEN provided by the permissions block
+          # You do not need to set the token explicitly here.
           files: artifacts/**/*
