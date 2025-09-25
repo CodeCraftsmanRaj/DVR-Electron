@@ -1,8 +1,5 @@
 name: Build and Release
 
-# This workflow now runs on two conditions:
-# 1. When code is pushed to the 'main' branch (for testing and updating the badge)
-# 2. When a tag starting with 'v' is pushed (for creating a release)
 on:
   push:
     branches: [ "main" ]
@@ -37,14 +34,21 @@ jobs:
           pip install -r dvr-scan-py/requirements.txt
         shell: bash
 
-      - name: ⚙️ Build Python Engine
+      # --- This section is slightly improved for robustness ---
+      - name: ⚙️ Build Python Engine (Windows)
+        if: runner.os == 'Windows'
+        working-directory: ./dvr-scan-py
+        run: pyinstaller --noconfirm dvr-scan-engine.spec
+        shell: bash
+
+      - name: ⚙️ Build Python Engine (macOS & Linux)
+        if: runner.os != 'Windows'
         working-directory: ./dvr-scan-py
         run: |
           pyinstaller --noconfirm dvr-scan-engine.spec
-          if [[ "$RUNNER_OS" != "Windows" ]]; then
-            chmod +x dist/dvr-scan-engine
-          fi
+          chmod +x dist/dvr-scan-engine
         shell: bash
+      # ----------------------------------------------------
 
       - name: 🟢 Set up Node.js
         uses: actions/setup-node@v4
@@ -64,21 +68,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dvr-scan-${{ matrix.os }}
-          path: |
-            dist/*.AppImage
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
-            dist/*.yml
-            dist/*.blockmap
+          path: dist/
 
   release:
-    # This job now depends on the build job
     needs: build
-    # CRITICAL: This condition ensures this job ONLY runs for tags, not for pushes to main
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
-
     steps:
       - name: 📥 Download all build artifacts
         uses: actions/download-artifact@v4
