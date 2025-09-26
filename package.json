@@ -1,6 +1,6 @@
 {
   "name": "dvr-scan-electron",
-  "version": "1.0.3",
+  "version": "1.9.0",
   "description": "Desktop UI for DVR-Scan",
   "author": "zaptrix",
   "license": "UNLICENSED",
@@ -21,6 +21,7 @@
       "package.json"
     ],
     "win": {
+      "target": "nsis",
       "extraResources": [
         {
           "from": "dvr-scan-py/dist/dvr-scan-engine.exe",
@@ -29,6 +30,7 @@
       ]
     },
     "mac": {
+      "target": "dmg",
       "extraResources": [
         {
           "from": "dvr-scan-py/dist/dvr-scan-engine",

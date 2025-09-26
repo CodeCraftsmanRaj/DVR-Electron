@@ -2,9 +2,9 @@ name: Build and Release
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build_and_release:
@@ -13,12 +13,12 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
-    # Permissions are set directly on the job that does the publishing.
+    # Permissions are required for electron-builder to create a GitHub Release
     permissions:
       contents: write
 
     env:
-      # This makes the token available to electron-builder
+      # This token is used by electron-builder to publish the release
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
@@ -28,7 +28,7 @@ jobs:
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: 📦 Install Python Dependencies
         run: |
@@ -54,13 +54,27 @@ jobs:
       - name: 🟢 Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: 📦 Install Node dependencies
         run: npm install
         shell: bash
 
-      - name: 🚀 Build and Publish Electron App
-        run: npm run build
+      # --- CORRECTED BUILD STEP ---
+      # This step is now split by OS to pass the correct build flags.
+      # This is crucial for creating a universal macOS binary.
+      - name: 🚀 Build and Publish Electron App (Windows)
+        if: runner.os == 'Windows'
+        run: npm run build -- --win --x64
+        shell: bash
+
+      - name: 🚀 Build and Publish Electron App (macOS)
+        if: runner.os == 'macOS'
+        run: npm run build -- --mac --universal
+        shell: bash
+
+      - name: 🚀 Build and Publish Electron App (Linux)
+        if: runner.os == 'Linux'
+        run: npm run build -- --linux --x64
         shell: bash
