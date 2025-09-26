@@ -1,12 +1,12 @@
 {
   "name": "dvr-scan-electron",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Desktop UI for DVR-Scan",
   "author": "zaptrix",
   "license": "UNLICENSED",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "build": "electron-builder"
   },
   "devDependencies": {
@@ -39,7 +39,8 @@
           "from": "dvr-scan-py/dist/dvr-scan-engine",
           "to": "dvr-scan-engine"
         }
-      ]
+      ],
+      "x64ArchFiles": "Resources/dvr-scan-engine"
     },
     "linux": {
       "target": [

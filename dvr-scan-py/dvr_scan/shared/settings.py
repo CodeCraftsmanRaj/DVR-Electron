@@ -33,10 +33,21 @@ class ScanSettings:
     def config(self) -> ConfigRegistry:
         return self._config
 
-    def get_arg(self, option: str) -> ty.Optional[ty.Any]:
-        """Get setting specified via command line argument, if any."""
+    def get_arg(self, option: ty.Optional[str]) -> ty.Optional[ty.Any]:
+        """
+        Get setting specified via command line argument.
+        If option is None, returns the entire args namespace object.
+        """
+        # --- THIS IS THE FIX ---
+        # If the option is None, it's a request for the whole args object, so we return it directly.
+        if option is None:
+            return self._args
+        # --- END OF FIX ---
+
         if option in self._app_settings:
             return self._app_settings[option]
+        
+        # If the option is a string, proceed as normal.
         arg_name = option.replace("-", "_")
         return getattr(self._args, arg_name) if hasattr(self._args, arg_name) else None
 
@@ -66,5 +77,6 @@ class ScanSettings:
         for key in keys:
             value = self._app_settings[key]
             if isinstance(value, bool):
-                value = "yes" if True else "no"
+                # Corrected logic to check the actual value, not just `True`
+                value = "yes" if value else "no"
             file.write(f"{key} = {str(value)}\n")

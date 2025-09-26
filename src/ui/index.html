@@ -2,10 +2,9 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <!-- Add this Content-Security-Policy meta tag -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
     />
     <title>DVR-Scan</title>
     <link rel="stylesheet" href="styles.css" />
@@ -14,7 +13,6 @@
     <div class="container">
       <h1>DVR-Scan</h1>
 
-      <!-- Tab Navigation -->
       <div class="tabs">
         <button
           class="tab-button active"
@@ -22,12 +20,12 @@
         >
           Motion Detection
         </button>
-        <button class="tab-button" data-for-panel="image-extraction-panel">
-          Image Extraction
+        <button class="tab-button" data-for-panel="hikvision-panel">
+          Hikvision Forensics
         </button>
       </div>
 
-      <!-- Motion Detection Panel -->
+      <!-- MOTION DETECTION (SCAN) PANEL -->
       <div id="motion-detection-panel" class="panel active">
         <fieldset>
           <legend>Input Videos</legend>
@@ -123,46 +121,72 @@
         </fieldset>
       </div>
 
-      <!-- Image Extraction Panel -->
-      <div id="image-extraction-panel" class="panel hidden">
+      <!-- HIKVISION FORENSICS PANEL -->
+      <div id="hikvision-panel" class="panel hidden">
         <fieldset>
-          <legend>Input Files</legend>
-          <div class="extraction-grid">
-            <label>Image File:</label>
+          <legend>Step 1: Select Inputs & Output Directory</legend>
+          <div class="hik-grid">
+            <label>Disk Image File:</label>
             <div class="file-input-group">
-              <button id="choose-image-button" class="button">
-                Choose Image...
+              <button id="hik-choose-image-button" class="button">
+                Choose Image (.dd, .E01)...
               </button>
-              <span id="image-file-display">No file selected</span>
+              <span id="hik-image-display">No file selected</span>
             </div>
-
-            <label>Master Sector File:</label>
+            <label>Output Directory:</label>
             <div class="file-input-group">
-              <button id="choose-master-file-button" class="button">
-                Choose Master File...
+              <button id="hik-choose-output-button" class="button">
+                Choose Directory...
               </button>
-              <span id="master-file-display">No file selected</span>
+              <span id="hik-output-display">No directory selected</span>
             </div>
+          </div>
+        </fieldset>
 
+        <fieldset id="hik-step2-fieldset" disabled>
+          <legend>Step 2: Parse Filesystem & Logs</legend>
+          <button id="hik-parse-all-button">
+            Parse Master Sector, HIKBTREE, and System Logs
+          </button>
+          <div class="parse-status">
+            <p>
+              Master Sector:
+              <span id="master-status" class="status-pending">Pending...</span>
+            </p>
+            <p>
+              HIKBTREE:
+              <span id="hikbtree-status" class="status-pending"
+                >Pending...</span
+              >
+            </p>
+            <p>
+              System Logs:
+              <span id="logs-status" class="status-pending">Pending...</span>
+            </p>
+          </div>
+        </fieldset>
+
+        <fieldset id="hik-step3-fieldset" disabled>
+          <legend>Step 3: Extract Video Block</legend>
+          <div class="hik-grid">
             <label>Block Offset (Hex):</label>
             <input
               type="text"
-              id="offset-input"
+              id="hik-offset-input"
               placeholder="e.g., 0xfc4c5e000"
             />
+            <button id="hik-extract-button">Extract Video</button>
+            <span></span>
+            <!-- Empty cell for alignment -->
           </div>
-        </fieldset>
-        <fieldset>
-          <legend>Run</legend>
-          <button id="start-extraction-button">Start Extraction</button>
         </fieldset>
       </div>
 
-      <!-- Progress & Output Section (Shared) -->
+      <!-- Progress & Output Section (Shared for both panels) -->
       <fieldset>
         <legend>Progress & Output</legend>
         <div id="progress-container" class="hidden">
-          <p id="progress-text">Scanning...</p>
+          <p id="progress-text">Waiting for task...</p>
           <progress id="progress-bar" value="0" max="100"></progress>
         </div>
         <pre id="output-area"></pre>

@@ -1,20 +1,22 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  // Scan functions
+  // === Scan Functions ===
   openFileDialog: () => ipcRenderer.invoke("dialog:openFile"),
   startScan: (settings) => ipcRenderer.send("start-scan", settings),
 
-  // Extractor functions
+  // === Hikvision Functions ===
   openImageDialog: () => ipcRenderer.invoke("dialog:openImage"),
   openMasterFileDialog: () => ipcRenderer.invoke("dialog:openMasterFile"),
-  startExtraction: (settings) => ipcRenderer.send("start-extraction", settings),
+  startHikvisionTask: (task, settings) =>
+    ipcRenderer.send("start-hikvision-task", { task, settings }),
 
-  // Shared functions
+  // === Shared Functions ===
   openOutputDialog: () => ipcRenderer.invoke("dialog:openOutput"),
+
+  // === Listeners from Main Process ===
   onScanUpdate: (callback) => ipcRenderer.on("scan-update", callback),
-  onExtractionComplete: (callback) =>
-    ipcRenderer.on("extraction-complete", callback),
+  onHikvisionUpdate: (callback) => ipcRenderer.on("hikvision-update", callback),
   onScanError: (callback) => ipcRenderer.on("scan-error", callback),
   onScanComplete: (callback) => ipcRenderer.on("scan-complete", callback),
   onScanLog: (callback) => ipcRenderer.on("scan-log", callback),
