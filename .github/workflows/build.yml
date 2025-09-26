@@ -2,7 +2,6 @@ name: Build and Release
 
 on:
   push:
-    branches: ["main"]
     tags:
       - "v*"
 
@@ -13,12 +12,10 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
-    # Permissions are required for electron-builder to create a GitHub Release
     permissions:
       contents: write
 
     env:
-      # This token is used by electron-builder to publish the release
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
@@ -37,18 +34,11 @@ jobs:
           pip install -r dvr-scan-py/requirements.txt
         shell: bash
 
-      - name: ⚙️ Build Python Engine (Windows)
-        if: runner.os == 'Windows'
-        working-directory: ./dvr-scan-py
-        run: pyinstaller --noconfirm dvr-scan-engine.spec
-        shell: bash
-
-      - name: ⚙️ Build Python Engine (macOS & Linux)
-        if: runner.os != 'Windows'
+      - name: ⚙️ Build Python Engine
         working-directory: ./dvr-scan-py
         run: |
           pyinstaller --noconfirm dvr-scan-engine.spec
-          chmod +x dist/dvr-scan-engine
+          chmod +x dist/dvr-scan-engine || true
         shell: bash
 
       - name: 🟢 Set up Node.js
@@ -61,20 +51,37 @@ jobs:
         run: npm install
         shell: bash
 
-      # --- CORRECTED BUILD STEP ---
-      # This step is now split by OS to pass the correct build flags.
-      # This is crucial for creating a universal macOS binary.
-      - name: 🚀 Build and Publish Electron App (Windows)
+      # Windows build
+      - name: 🚀 Build Electron App (Windows x64)
         if: runner.os == 'Windows'
         run: npm run build -- --win --x64
         shell: bash
 
-      - name: 🚀 Build and Publish Electron App (macOS)
+      # macOS Intel build
+      - name: 🚀 Build Electron App (macOS Intel x64)
         if: runner.os == 'macOS'
-        run: npm run build -- --mac --universal
+        run: npm run build -- --mac --x64
         shell: bash
 
-      - name: 🚀 Build and Publish Electron App (Linux)
+      # macOS Apple Silicon build
+      - name: 🚀 Build Electron App (macOS Apple Silicon arm64)
+        if: runner.os == 'macOS'
+        run: npm run build -- --mac --arm64
+        shell: bash
+
+      # Linux build
+      - name: 🚀 Build Electron App (Linux x64)
         if: runner.os == 'Linux'
         run: npm run build -- --linux --x64
         shell: bash
+
+      # Upload artifacts to GitHub Releases
+      - name: 📤 Upload Release Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
+            dist/*.tar.gz

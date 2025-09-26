@@ -1,7 +1,7 @@
 # DVR-Scan-Raj Electron GUI
 
-[![Build Status](https://github.com/rand0misguyhere-dotcom/DVR_Raj/actions/workflows/build.yml/badge.svg)](https://github.com/rand0misguyhere-dotcom/DVR_Raj/actions/workflows/build.yml)
-[![Latest Release](https://img.shields.io/github/v/release/rand0misguyhere-dotcom/DVR_Raj)](https://github.com/rand0misguyhere-dotcom/DVR_Raj/releases/latest)
+[![Build Cross-Platform Releases](https://github.com/CodeCraftsmanRaj/DVR-Electron/actions/workflows/build.yml/badge.svg)](https://github.com/CodeCraftsmanRaj/DVR-Electron/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/CodeCraftsmanRaj/DVR-Electron)](https://github.com/CodeCraftsmanRaj/DVR-Electron/releases/latest)
 
 A modern, cross-platform desktop application for the powerful `DVR-Scan` video motion detection engine.
 
