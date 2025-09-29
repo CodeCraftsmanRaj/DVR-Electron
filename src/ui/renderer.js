@@ -31,6 +31,17 @@ const hikStep3Fieldset = document.getElementById("hik-step3-fieldset");
 const hikOffsetInput = document.getElementById("hik-offset-input");
 const hikExtractButton = document.getElementById("hik-extract-button");
 
+// --- Forensic Explorer Elements ---
+const explorerOutputDisplay = document.getElementById(
+  "explorer-output-display"
+);
+const loadExplorerDataButton = document.getElementById(
+  "load-explorer-data-button"
+);
+const explorerTableContainer = document.getElementById(
+  "explorer-table-container"
+);
+
 // --- State Variables ---
 let selectedImagePath = null;
 let selectedOutputDir = null;
@@ -58,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Attach all event listeners
   setupMotionDetectionListeners();
   setupHikvisionListeners();
+  setupExplorerListeners(); // New listener setup
   setupIPCListeners();
 });
 
@@ -135,8 +147,12 @@ function setupHikvisionListeners() {
     if (dirPath) {
       selectedOutputDir = dirPath;
       hikOutputDisplay.textContent = dirPath;
+      // Also update the explorer tab display
+      explorerOutputDisplay.textContent = dirPath;
       resetHikvisionState();
       checkHikvisionStep1();
+      // Enable the load button on the explorer tab
+      loadExplorerDataButton.disabled = false;
     }
   });
 
@@ -185,6 +201,108 @@ function resetHikvisionState() {
 function updateStatus(element, success, message) {
   element.textContent = message;
   element.className = success ? "status-success" : "status-fail";
+}
+
+// ===================================================================
+//  FORENSIC EXPLORER LOGIC (NEW SECTION)
+// ===================================================================
+function setupExplorerListeners() {
+  loadExplorerDataButton.addEventListener("click", async () => {
+    if (!selectedOutputDir) {
+      alert(
+        "Please select an output directory on the 'Hikvision Forensics' tab first."
+      );
+      return;
+    }
+    logToOutput("Loading forensic data from JSON files...");
+    explorerTableContainer.innerHTML = "<p>Loading...</p>";
+
+    const result = await window.electronAPI.readHikvisionResults(
+      selectedOutputDir
+    );
+
+    if (result.success) {
+      logToOutput("Data loaded successfully. Rendering table...\n");
+      renderExplorerTable(result.data.hikbtree);
+    } else {
+      logToOutput(`Error loading data: ${result.error}\n`);
+      explorerTableContainer.innerHTML = `<p class="status-fail">Error: Could not load data. Ensure you have run the parsing step first. Details: ${result.error}</p>`;
+    }
+  });
+}
+
+function renderExplorerTable(hikbtreeData) {
+  const table = document.createElement("table");
+  table.className = "results-table";
+
+  // Create table header
+  const thead = table.createTHead();
+  const headerRow = thead.insertRow();
+  const headers = [
+    "Ch",
+    "Start Time (UTC)",
+    "End Time (UTC)",
+    "Data Block Offset",
+    "Actions",
+  ];
+  headers.forEach((text) => {
+    const th = document.createElement("th");
+    th.textContent = text;
+    headerRow.appendChild(th);
+  });
+
+  // Create table body
+  const tbody = table.createTBody();
+  let entriesFound = 0;
+
+  // Iterate through pages and entries to populate the table
+  if (hikbtreeData && hikbtreeData.pages) {
+    Object.values(hikbtreeData.pages).forEach((page) => {
+      if (page.entries) {
+        page.entries.forEach((entry) => {
+          if (entry.existence === "Has Video Data") {
+            entriesFound++;
+            const row = tbody.insertRow();
+            row.dataset.offset = entry.data_block_offset; // Store offset in the row
+
+            row.insertCell().textContent = entry.channel;
+            row.insertCell().textContent = entry.start_time.readable;
+            row.insertCell().textContent = entry.end_time.readable;
+            row.insertCell().textContent = entry.data_block_offset;
+
+            const actionCell = row.insertCell();
+            actionCell.className = "extract-button-cell";
+            const extractBtn = document.createElement("button");
+            extractBtn.textContent = "Extract";
+            extractBtn.className = "extract-button";
+            extractBtn.onclick = () => {
+              const offset = row.dataset.offset;
+              logToOutput(`Starting extraction for offset ${offset}...\n`);
+              // Also disable buttons on the other tab to prevent conflicts
+              setHikvisionButtonsState(false);
+              window.electronAPI.startHikvisionTask("extract", {
+                image: selectedImagePath,
+                master_file: masterFilePath,
+                offset: offset,
+                output_dir: selectedOutputDir,
+                extra_offset: extraOffset,
+              });
+            };
+            actionCell.appendChild(extractBtn);
+          }
+        });
+      }
+    });
+  }
+
+  // Update the container
+  explorerTableContainer.innerHTML = "";
+  if (entriesFound > 0) {
+    explorerTableContainer.appendChild(table);
+  } else {
+    explorerTableContainer.innerHTML =
+      "<p>No video recording entries found in hikbtree.json. Make sure you have parsed the image successfully.</p>";
+  }
 }
 
 // ===================================================================
@@ -260,13 +378,13 @@ function setupIPCListeners() {
       );
       if (data.success) {
         logToOutput(
-          "\nAll parsing complete. You may now extract video blocks."
+          "\nAll parsing complete. You may now extract video blocks manually or use the Forensic Explorer tab.\n"
         );
         hikStep3Fieldset.disabled = false;
       }
       setHikvisionButtonsState(true);
     } else if (data.type === "hik_extract_complete") {
-      logToOutput(`SUCCESS! Video extracted to: ${data.path}`);
+      logToOutput(`\nSUCCESS! Video extracted to: ${data.path}\n`);
       setHikvisionButtonsState(true);
     }
   });

@@ -1,8 +1,8 @@
 # DVR-Scan-Raj Electron GUI
 
 [![Build Cross-Platform Releases](https://github.com/CodeCraftsmanRaj/DVR-Electron/actions/workflows/build.yml/badge.svg)](https://github.com/CodeCraftsmanRaj/DVR-Electron/actions/workflows/build.yml)
-[![Latest Release](https://img.shields.io/github/v/release/CodeCraftsmanRaj/DVR-Electron)](https://github.com/CodeCraftsmanRaj/DVR-Electron/releases/latest)
 
+[![Latest Release](https://img.shields.io/github/v/release/CodeCraftsmanRaj/DVR-Electron?include_prereleases)](https://github.com/CodeCraftsmanRaj/DVR-Electron/releases/latest)
 A modern, cross-platform desktop application for the powerful `DVR-Scan` video motion detection engine.
 
 This project provides a user-friendly graphical interface (GUI) built with Electron.js that acts as a frontend for the original Python-based `DVR-Scan` command-line tool. It allows users to easily select videos, configure motion detection parameters, and view results without needing to use the terminal.

@@ -23,9 +23,13 @@
         <button class="tab-button" data-for-panel="hikvision-panel">
           Hikvision Forensics
         </button>
+        <!-- New Tab Button -->
+        <button class="tab-button" data-for-panel="explorer-panel">
+          Forensic Explorer
+        </button>
       </div>
 
-      <!-- MOTION DETECTION (SCAN) PANEL -->
+      <!-- MOTION DETECTION (SCAN) PANEL (No changes here) -->
       <div id="motion-detection-panel" class="panel active">
         <fieldset>
           <legend>Input Videos</legend>
@@ -37,7 +41,6 @@
           </div>
           <div id="video-list-container"></div>
         </fieldset>
-
         <fieldset>
           <legend>Scan Settings</legend>
           <div class="settings-grid">
@@ -65,7 +68,6 @@
             </div>
           </div>
         </fieldset>
-
         <fieldset>
           <legend>Advanced Settings</legend>
           <div class="advanced-settings-grid">
@@ -110,7 +112,6 @@
             </div>
           </div>
         </fieldset>
-
         <fieldset>
           <legend>Run</legend>
           <button id="start-scan-button">Start Scan</button>
@@ -121,7 +122,7 @@
         </fieldset>
       </div>
 
-      <!-- HIKVISION FORENSICS PANEL -->
+      <!-- HIKVISION FORENSICS PANEL (No changes here) -->
       <div id="hikvision-panel" class="panel hidden">
         <fieldset>
           <legend>Step 1: Select Inputs & Output Directory</legend>
@@ -142,7 +143,6 @@
             </div>
           </div>
         </fieldset>
-
         <fieldset id="hik-step2-fieldset" disabled>
           <legend>Step 2: Parse Filesystem & Logs</legend>
           <button id="hik-parse-all-button">
@@ -165,7 +165,6 @@
             </p>
           </div>
         </fieldset>
-
         <fieldset id="hik-step3-fieldset" disabled>
           <legend>Step 3: Extract Video Block</legend>
           <div class="hik-grid">
@@ -182,7 +181,34 @@
         </fieldset>
       </div>
 
-      <!-- Progress & Output Section (Shared for both panels) -->
+      <!-- New Forensic Explorer Panel -->
+      <div id="explorer-panel" class="panel hidden">
+        <fieldset>
+          <legend>Data Explorer Controls</legend>
+          <div class="hik-grid">
+            <label>Output Directory:</label>
+            <span id="explorer-output-display"
+              >No directory selected. Please run Step 1 on the Hikvision
+              Forensics tab first.</span
+            >
+            <span></span>
+            <button id="load-explorer-data-button" disabled>
+              Load / Refresh Forensic Data
+            </button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Video Recordings</legend>
+          <div id="explorer-table-container">
+            <p>
+              No data loaded. Click the "Load" button above after parsing the
+              image.
+            </p>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- Progress & Output Section (Shared for all panels) -->
       <fieldset>
         <legend>Progress & Output</legend>
         <div id="progress-container" class="hidden">

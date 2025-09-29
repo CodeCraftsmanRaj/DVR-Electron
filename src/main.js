@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
+const fs = require("fs").promises; // Use the promise-based version of fs
 
 let mainWindow;
 
@@ -58,6 +59,27 @@ async function handleOpenOutput() {
   });
   return canceled ? null : filePaths[0];
 }
+
+// New handler to read the JSON results files
+ipcMain.handle("files:readHikvisionResults", async (event, outputDir) => {
+  try {
+    const hikbtreePath = path.join(outputDir, "hikbtree.json");
+    // You could also read system_logs.json here if you want to display that data too
+    // const logsPath = path.join(outputDir, "system_logs.json");
+
+    const hikbtreeData = await fs.readFile(hikbtreePath, "utf-8");
+
+    return {
+      success: true,
+      data: {
+        hikbtree: JSON.parse(hikbtreeData),
+      },
+    };
+  } catch (error) {
+    console.error("Failed to read forensic result files:", error);
+    return { success: false, error: error.message };
+  }
+});
 
 app.whenReady().then(() => {
   ipcMain.handle("dialog:openFile", handleFileOpen);

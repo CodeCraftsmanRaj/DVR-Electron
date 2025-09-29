@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   startHikvisionTask: (task, settings) =>
     ipcRenderer.send("start-hikvision-task", { task, settings }),
 
+  // ADD THIS NEW FUNCTION TO READ PARSED DATA
+  readHikvisionResults: (outputDir) =>
+    ipcRenderer.invoke("files:readHikvisionResults", outputDir),
+
   // === Shared Functions ===
   openOutputDialog: () => ipcRenderer.invoke("dialog:openOutput"),
 
