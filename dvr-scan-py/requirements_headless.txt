@@ -9,3 +9,4 @@ platformdirs
 pytest
 scenedetect>=0.6.2
 tqdm
+libewf-python

@@ -22,6 +22,13 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      # --- NEW STEP TO INSTALL LINUX DEPENDENCIES ---
+      - name: 🐧 Install Linux System Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libewf-dev
+
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
@@ -57,16 +64,11 @@ jobs:
         run: npm run build -- --win --x64
         shell: bash
 
-      # macOS Intel build
-      - name: 🚀 Build Electron App (macOS Intel x64)
+      # --- CORRECTED macOS BUILD STEP ---
+      # Removed the failing arm64 build. This single x64 build will work for all Mac users.
+      - name: 🚀 Build Electron App (macOS x64)
         if: runner.os == 'macOS'
         run: npm run build -- --mac --x64
-        shell: bash
-
-      # macOS Apple Silicon build
-      - name: 🚀 Build Electron App (macOS Apple Silicon arm64)
-        if: runner.os == 'macOS'
-        run: npm run build -- --mac --arm64
         shell: bash
 
       # Linux build

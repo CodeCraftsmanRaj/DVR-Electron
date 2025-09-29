@@ -10,3 +10,4 @@ pytest
 scenedetect>=0.6.2
 screeninfo
 tqdm
+libewf-python

@@ -1,12 +1,11 @@
 # dvr-scan-engine.spec
 
-# This block ensures we can find our source files
 import os
 from PyInstaller.utils.hooks import collect_data_files
 
 block_cipher = None
 
-# List of data files to bundle. This part is correct and remains the same.
+# List of data files to bundle. This remains the same.
 datas_to_bundle = [
     ('LICENSE', '.'),
     ('dvr-scan.cfg', '.'),
@@ -20,10 +19,11 @@ datas_to_bundle = [
 
 a = Analysis(
     ['dvr_scan/__main__.py'],
-    pathex=['.'], # Add current directory to path
-    binaries=[],
+    pathex=['.'], 
+    binaries=[], # PyInstaller will now find the system-installed libewf.so automatically
     datas=datas_to_bundle,
-    hiddenimports=[],
+    # This is still crucial to ensure the Python wrapper module is included.
+    hiddenimports=['pyewf'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -33,10 +33,6 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-
-# --- THIS IS THE CRITICAL CHANGE ---
-# The EXE object is now the final output. We pass all the necessary data
-# directly to it to create a single, self-contained executable file.
 exe = EXE(
     pyz,
     a.scripts,
@@ -49,7 +45,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    runtime_tmpdir=None, # Important for single-file executables
+    runtime_tmpdir=None,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
